@@ -2,6 +2,7 @@ import { useState, useCallback } from "react";
 import { GameSetup } from "./components/GameSetup";
 import { BattleScene } from "./components/BattleScene";
 import { GameOver } from "./components/GameOver";
+import { SpaceBackground } from "./components/SpaceBackground";
 import { resolveBattle, BattleResult } from "./engine/battleEngine";
 
 type GamePhase = "setup" | "battle" | "gameover";
@@ -47,6 +48,7 @@ function App() {
 
   return (
     <div className="app">
+      <SpaceBackground />
       {phase === "setup" && <GameSetup onStartGame={handleStartGame} />}
 
       {phase === "battle" && battleResult && (

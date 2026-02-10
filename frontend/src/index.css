@@ -60,6 +60,7 @@ body {
   background: var(--bg-primary);
   color: var(--text-primary);
   overflow-x: hidden;
+  overflow-y: auto;
   -webkit-font-smoothing: antialiased;
 }
 
@@ -67,6 +68,8 @@ body {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+  position: relative;
+  z-index: 1;
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -80,11 +83,7 @@ body {
   justify-content: center;
   padding: 2rem;
   position: relative;
-  background: radial-gradient(
-    ellipse at 50% 30%,
-    #1a1a4a 0%,
-    var(--bg-primary) 70%
-  );
+  background: transparent;
 }
 
 .particles {
@@ -377,11 +376,7 @@ body {
   flex-direction: column;
   align-items: center;
   padding: 1.5rem 2rem;
-  background: radial-gradient(
-    ellipse at 50% 50%,
-    #0f0f2e 0%,
-    var(--bg-primary) 70%
-  );
+  background: transparent;
   cursor: pointer;
   user-select: none;
 }
@@ -840,27 +835,15 @@ body {
 }
 
 .gameover-container.victory {
-  background: radial-gradient(
-    ellipse at 50% 30%,
-    #1a2a0a 0%,
-    var(--bg-primary) 70%
-  );
+  background: transparent;
 }
 
 .gameover-container.defeat {
-  background: radial-gradient(
-    ellipse at 50% 30%,
-    #2a0a0a 0%,
-    var(--bg-primary) 70%
-  );
+  background: transparent;
 }
 
 .gameover-container.draw {
-  background: radial-gradient(
-    ellipse at 50% 30%,
-    #1a1a3a 0%,
-    var(--bg-primary) 70%
-  );
+  background: transparent;
 }
 
 .gameover-backdrop {
