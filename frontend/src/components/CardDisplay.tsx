@@ -8,6 +8,8 @@ interface CardDisplayProps {
   glowing?: boolean;
   damageNumber?: number | null;
   healNumber?: number | null;
+  roundKey?: number;
+  instantFlip?: boolean;
 }
 
 export const CardDisplay: React.FC<CardDisplayProps> = ({
@@ -17,6 +19,8 @@ export const CardDisplay: React.FC<CardDisplayProps> = ({
   glowing = false,
   damageNumber = null,
   healNumber = null,
+  roundKey = 0,
+  instantFlip = false,
 }) => {
   const isMajor = card?.type === "major";
 
@@ -25,7 +29,7 @@ export const CardDisplay: React.FC<CardDisplayProps> = ({
       <div
         className={`card ${revealed ? "flipped" : ""} ${glowing ? "glowing" : ""} ${isMajor && revealed ? "major-glow" : ""}`}
       >
-        <div className="card-inner">
+        <div className={`card-inner ${instantFlip ? "no-transition" : ""}`}>
           {/* Card Back */}
           <div className="card-back">
             <div className="card-back-design">
@@ -64,7 +68,7 @@ export const CardDisplay: React.FC<CardDisplayProps> = ({
       {damageNumber !== null && damageNumber > 0 && (
         <div
           className={`floating-number damage ${side}`}
-          key={`dmg-${damageNumber}-${Date.now()}`}
+          key={`dmg-${side}-${roundKey}-${damageNumber}`}
         >
           -{damageNumber}
         </div>
@@ -72,7 +76,7 @@ export const CardDisplay: React.FC<CardDisplayProps> = ({
       {healNumber !== null && healNumber > 0 && (
         <div
           className={`floating-number heal ${side}`}
-          key={`heal-${healNumber}-${Date.now()}`}
+          key={`heal-${side}-${roundKey}-${healNumber}`}
         >
           +{healNumber}
         </div>

@@ -432,7 +432,7 @@ body {
   justify-content: center;
   gap: 2rem;
   width: 100%;
-  max-width: 800px;
+  max-width: 900px;
   margin-bottom: 1.5rem;
 }
 
@@ -442,6 +442,99 @@ body {
   align-items: center;
   gap: 1rem;
   flex: 1;
+  padding: 1rem;
+  border-radius: var(--radius);
+  position: relative;
+  transition:
+    transform 0.6s ease,
+    filter 0.6s ease;
+}
+
+/* No colored borders — clean look */
+.battle-side.enemy-side,
+.battle-side.player-side {
+  background: transparent;
+  border: none;
+  box-shadow: none;
+}
+
+/* Attacking: card lunges toward opponent */
+.battle-side.player-side.attacking {
+  transform: translateX(30px) scale(1.04);
+}
+.battle-side.enemy-side.attacking {
+  transform: translateX(-30px) scale(1.04);
+}
+
+/* Defending: subtle recoil */
+.battle-side.player-side.defending {
+  transform: translateX(-12px);
+  animation: hit-shake 0.4s ease;
+}
+.battle-side.enemy-side.defending {
+  transform: translateX(12px);
+  animation: hit-shake 0.4s ease;
+}
+
+@keyframes hit-shake {
+  0% {
+    transform: translateX(0);
+  }
+  20% {
+    transform: translateX(-8px);
+  }
+  40% {
+    transform: translateX(6px);
+  }
+  60% {
+    transform: translateX(-4px);
+  }
+  80% {
+    transform: translateX(2px);
+  }
+  100% {
+    transform: translateX(0);
+  }
+}
+
+/* Simple side label — just a clean text tag */
+.side-label {
+  font-family: var(--font-display);
+  font-size: 1.4rem;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  padding: 0.2rem 1rem;
+  text-align: center;
+}
+
+.side-label.player {
+  color: var(--player-color);
+}
+
+.side-label.enemy {
+  color: var(--enemy-color);
+}
+
+/* Attack action label (centered above arena) */
+.attack-label {
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  color: var(--gold-bright);
+  text-align: center;
+  min-height: 2.2rem;
+  opacity: 0;
+  transform: translateY(8px);
+  transition:
+    opacity 0.4s ease,
+    transform 0.4s ease;
+  text-shadow: 0 0 15px rgba(212, 175, 55, 0.4);
+  margin-bottom: 0.5rem;
+}
+
+.attack-label.visible {
+  opacity: 1;
+  transform: translateY(0);
 }
 
 .vs-divider {
@@ -488,10 +581,14 @@ body {
 
 .card-name-tag.player {
   border-color: var(--player-color);
+  background: rgba(74, 158, 255, 0.1);
+  color: var(--player-color);
 }
 
 .card-name-tag.enemy {
   border-color: var(--enemy-color);
+  background: rgba(255, 74, 74, 0.1);
+  color: var(--enemy-color);
 }
 
 .major-badge {
@@ -547,28 +644,36 @@ body {
   background: #1a1a2e;
   border-radius: 10px;
   overflow: hidden;
-  border: 1px solid #333;
+  border: 2px solid #333;
   position: relative;
+}
+
+.health-bar-container.player .health-bar-track {
+  border-color: rgba(74, 158, 255, 0.4);
+}
+
+.health-bar-container.enemy .health-bar-track {
+  border-color: rgba(255, 74, 74, 0.4);
 }
 
 .health-bar-fill {
   height: 100%;
   border-radius: 7px;
   transition:
-    width 0.8s ease,
-    background-color 0.5s ease;
+    width 1.5s cubic-bezier(0.4, 0, 0.2, 1),
+    background-color 0.8s ease;
   position: relative;
 }
 
 .health-bar-fill.animating {
-  transition: width 0.4s ease;
+  transition: width 1s cubic-bezier(0.25, 0.46, 0.45, 0.94);
 }
 
 .health-bar-flash {
   position: absolute;
   inset: 0;
-  background: rgba(255, 255, 255, 0.3);
-  animation: flash 0.3s ease;
+  background: rgba(255, 255, 255, 0.4);
+  animation: flash 0.6s ease-out;
   pointer-events: none;
 }
 
@@ -600,8 +705,12 @@ body {
   position: relative;
   width: 100%;
   height: 100%;
-  transition: transform 0.6s ease;
+  transition: transform 1.2s cubic-bezier(0.4, 0, 0.2, 1);
   transform-style: preserve-3d;
+}
+
+.card-inner.no-transition {
+  transition: none !important;
 }
 
 .card.flipped .card-inner {
@@ -672,11 +781,11 @@ body {
 }
 
 .card-label {
-  padding: 0.4rem 0.5rem;
+  padding: 0.5rem 0.6rem;
   text-align: center;
-  font-size: 0.9rem;
+  font-size: 1.3rem;
   font-weight: 600;
-  line-height: 1.2;
+  line-height: 1.3;
 }
 
 .minor-label {
@@ -690,9 +799,9 @@ body {
 }
 
 .card-effect-badge {
-  padding: 0.2rem 0.4rem;
+  padding: 0.25rem 0.5rem;
   text-align: center;
-  font-size: 0.8rem;
+  font-size: 1.05rem;
   color: var(--gold);
   background: rgba(0, 0, 0, 0.6);
 }
@@ -1150,7 +1259,26 @@ body {
 
   .battle-side {
     flex-direction: row;
-    gap: 1rem;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.8rem;
+    padding: 0.8rem;
+  }
+
+  .battle-side.player-side.attacking {
+    transform: translateY(-15px) scale(1.03);
+  }
+  .battle-side.enemy-side.attacking {
+    transform: translateY(15px) scale(1.03);
+  }
+  .battle-side.player-side.defending,
+  .battle-side.enemy-side.defending {
+    transform: none;
+  }
+
+  .side-label {
+    width: 100%;
+    font-size: 1.2rem;
   }
 
   .card-container {
