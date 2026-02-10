@@ -1,7 +1,0 @@
-<svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
-<!-- Outline of a shield -->
-<path d="M32 4L12 12V28C12 42 32 58 32 60C32 58 52 42 52 28V12L32 4Z" fill="#00f3ff" stroke="#2D1B4E" stroke-width="2"/>
-<!-- Inner detail -->
-<path d="M32 12V50" stroke="#2D1B4E" stroke-width="2" stroke-opacity="0.3"/>
-<path d="M18 20H46" stroke="#2D1B4E" stroke-width="2" stroke-opacity="0.3"/>
-</svg>
