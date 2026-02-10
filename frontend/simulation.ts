@@ -201,19 +201,25 @@ function simulateDifficulty(diffId: DifficultyId): DifficultyStats {
 // ─── Main ────────────────────────────────────────────────────────────────────
 
 function main() {
-  console.log("╔══════════════════════════════════════════════════════════════╗");
+  console.log(
+    "╔══════════════════════════════════════════════════════════════╗",
+  );
   console.log("║   MONTE CARLO SIMULATION — Fate's Echo Battle Engine       ║");
-  console.log(`║   Samples per difficulty: ${SAMPLES_PER_DIFFICULTY.toLocaleString().padStart(10)}                    ║`);
-  console.log(`║   Total battles: ${(SAMPLES_PER_DIFFICULTY * DIFFICULTY_ORDER.length).toLocaleString().padStart(10)}                          ║`);
-  console.log("╚══════════════════════════════════════════════════════════════╝\n");
+  console.log(
+    `║   Samples per difficulty: ${SAMPLES_PER_DIFFICULTY.toLocaleString().padStart(10)}                    ║`,
+  );
+  console.log(
+    `║   Total battles: ${(SAMPLES_PER_DIFFICULTY * DIFFICULTY_ORDER.length).toLocaleString().padStart(10)}                          ║`,
+  );
+  console.log(
+    "╚══════════════════════════════════════════════════════════════╝\n",
+  );
 
   const allStats: DifficultyStats[] = [];
 
   for (const diffId of DIFFICULTY_ORDER) {
     const diff = DIFFICULTIES[diffId];
-    process.stdout.write(
-      `Simulating ${diff.icon} ${diff.name.padEnd(10)} ...`,
-    );
+    process.stdout.write(`Simulating ${diff.icon} ${diff.name.padEnd(10)} ...`);
     const start = Date.now();
     const stats = simulateDifficulty(diffId);
     const elapsed = ((Date.now() - start) / 1000).toFixed(1);
@@ -223,36 +229,62 @@ function main() {
     allStats.push(stats);
   }
 
-  console.log("\n═══════════════════════════════════════════════════════════════");
+  console.log(
+    "\n═══════════════════════════════════════════════════════════════",
+  );
   console.log("                       DETAILED RESULTS");
-  console.log("═══════════════════════════════════════════════════════════════\n");
+  console.log(
+    "═══════════════════════════════════════════════════════════════\n",
+  );
 
   for (const s of allStats) {
     const diff = DIFFICULTIES[s.id];
-    console.log(`── ${diff.icon} ${diff.name} (×${diff.multiplier} / draw ×${diff.drawMultiplier}) ──`);
-    console.log(`   Player HP: ${diff.playerStartHp} | Enemy HP: ${diff.enemyStartHp} | Enemy Dmg+: ${diff.enemyDmgBonus} | Enemy Heal+: ${diff.enemyHealBonus} | Player Dmg+: ${diff.playerDmgBonus}`);
-    console.log(`   Win:  ${(s.winRate * 100).toFixed(3)}%  [${(s.winRateCI[0] * 100).toFixed(3)}% – ${(s.winRateCI[1] * 100).toFixed(3)}%]`);
-    console.log(`   Draw: ${(s.drawRate * 100).toFixed(3)}%  [${(s.drawRateCI[0] * 100).toFixed(3)}% – ${(s.drawRateCI[1] * 100).toFixed(3)}%]`);
-    console.log(`   Loss: ${(s.lossRate * 100).toFixed(3)}%  [${(s.lossRateCI[0] * 100).toFixed(3)}% – ${(s.lossRateCI[1] * 100).toFixed(3)}%]`);
-    console.log(`   EV per unit bet: ${s.expectedValue >= 0 ? "+" : ""}${s.expectedValue.toFixed(5)}`);
-    console.log(`   House Edge: ${s.houseEdge.toFixed(3)}%  [${s.houseEdgeCI[0].toFixed(3)}% – ${s.houseEdgeCI[1].toFixed(3)}%]`);
+    console.log(
+      `── ${diff.icon} ${diff.name} (×${diff.multiplier} / draw ×${diff.drawMultiplier}) ──`,
+    );
+    console.log(
+      `   Player HP: ${diff.playerStartHp} | Enemy HP: ${diff.enemyStartHp} | Enemy Dmg+: ${diff.enemyDmgBonus} | Enemy Heal+: ${diff.enemyHealBonus} | Player Dmg+: ${diff.playerDmgBonus}`,
+    );
+    console.log(
+      `   Win:  ${(s.winRate * 100).toFixed(3)}%  [${(s.winRateCI[0] * 100).toFixed(3)}% – ${(s.winRateCI[1] * 100).toFixed(3)}%]`,
+    );
+    console.log(
+      `   Draw: ${(s.drawRate * 100).toFixed(3)}%  [${(s.drawRateCI[0] * 100).toFixed(3)}% – ${(s.drawRateCI[1] * 100).toFixed(3)}%]`,
+    );
+    console.log(
+      `   Loss: ${(s.lossRate * 100).toFixed(3)}%  [${(s.lossRateCI[0] * 100).toFixed(3)}% – ${(s.lossRateCI[1] * 100).toFixed(3)}%]`,
+    );
+    console.log(
+      `   EV per unit bet: ${s.expectedValue >= 0 ? "+" : ""}${s.expectedValue.toFixed(5)}`,
+    );
+    console.log(
+      `   House Edge: ${s.houseEdge.toFixed(3)}%  [${s.houseEdgeCI[0].toFixed(3)}% – ${s.houseEdgeCI[1].toFixed(3)}%]`,
+    );
     console.log(`   Avg payout per 1 unit: ${s.avgPayoutPerBet.toFixed(5)}`);
     console.log(`   Avg rounds played: ${s.avgRoundsPlayed.toFixed(2)} / 5`);
-    console.log(`   Early terminations: ${s.earlyTerminations} (${((s.earlyTerminations / s.totalBattles) * 100).toFixed(2)}%)`);
+    console.log(
+      `   Early terminations: ${s.earlyTerminations} (${((s.earlyTerminations / s.totalBattles) * 100).toFixed(2)}%)`,
+    );
     console.log(`   Player KO rate: ${(s.playerKORate * 100).toFixed(2)}%`);
     console.log(`   Enemy KO rate: ${(s.enemyKORate * 100).toFixed(2)}%`);
     console.log(`   Avg player final HP: ${s.avgPlayerFinalHp.toFixed(2)}`);
     console.log(`   Avg enemy final HP: ${s.avgEnemyFinalHp.toFixed(2)}`);
-    console.log(`   Avg player dmg/round: ${s.avgPlayerDmgPerRound.toFixed(2)}`);
+    console.log(
+      `   Avg player dmg/round: ${s.avgPlayerDmgPerRound.toFixed(2)}`,
+    );
     console.log(`   Avg enemy dmg/round: ${s.avgEnemyDmgPerRound.toFixed(2)}`);
     console.log(`   Avg majors/battle: ${s.avgMajorsPerBattle.toFixed(2)}`);
     console.log();
   }
 
   // ── Summary Table ──
-  console.log("═══════════════════════════════════════════════════════════════");
+  console.log(
+    "═══════════════════════════════════════════════════════════════",
+  );
   console.log("                    HOUSE EDGE SUMMARY");
-  console.log("═══════════════════════════════════════════════════════════════");
+  console.log(
+    "═══════════════════════════════════════════════════════════════",
+  );
   console.log(
     "Difficulty   | Mult  | Win%     | Draw%    | Loss%    | House Edge    | EV/bet",
   );
@@ -266,15 +298,27 @@ function main() {
     const win = `${(s.winRate * 100).toFixed(2)}%`.padStart(7);
     const draw = `${(s.drawRate * 100).toFixed(2)}%`.padStart(7);
     const loss = `${(s.lossRate * 100).toFixed(2)}%`.padStart(7);
-    const he = `${s.houseEdge >= 0 ? "+" : ""}${s.houseEdge.toFixed(3)}%`.padStart(13);
-    const ev = `${s.expectedValue >= 0 ? "+" : ""}${s.expectedValue.toFixed(4)}`.padStart(7);
-    console.log(`${name} | ${mult} | ${win} | ${draw} | ${loss} | ${he} | ${ev}`);
+    const he =
+      `${s.houseEdge >= 0 ? "+" : ""}${s.houseEdge.toFixed(3)}%`.padStart(13);
+    const ev =
+      `${s.expectedValue >= 0 ? "+" : ""}${s.expectedValue.toFixed(4)}`.padStart(
+        7,
+      );
+    console.log(
+      `${name} | ${mult} | ${win} | ${draw} | ${loss} | ${he} | ${ev}`,
+    );
   }
 
   // ── Revenue projection ──
-  console.log("\n═══════════════════════════════════════════════════════════════");
-  console.log("                 REVENUE PROJECTION (per 10,000 bets of 100 tokens each)");
-  console.log("═══════════════════════════════════════════════════════════════");
+  console.log(
+    "\n═══════════════════════════════════════════════════════════════",
+  );
+  console.log(
+    "                 REVENUE PROJECTION (per 10,000 bets of 100 tokens each)",
+  );
+  console.log(
+    "═══════════════════════════════════════════════════════════════",
+  );
   const projectionBets = 10_000;
   const projectionBetSize = 100;
   for (const s of allStats) {
