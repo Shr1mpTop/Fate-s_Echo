@@ -1,10 +1,11 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   DifficultyId,
   DIFFICULTIES,
   DIFFICULTY_ORDER,
   estimateWinRate,
 } from "../engine/difficulty";
+import { soundManager } from "../utils/soundManager";
 
 interface GameSetupProps {
   onStartGame: (
@@ -24,6 +25,15 @@ export const GameSetup: React.FC<GameSetupProps> = ({
   const [seed, setSeed] = useState("");
   const [betAmount, setBetAmount] = useState(100);
   const [difficulty, setDifficulty] = useState<DifficultyId>("normal");
+  const [soundEnabled, setSoundEnabled] = useState(true);
+
+  // Play menu music on mount
+  useEffect(() => {
+    soundManager.playMenuMusic();
+    return () => {
+      soundManager.stopBackgroundMusic();
+    };
+  }, []);
 
   const diff = DIFFICULTIES[difficulty];
   const winRate = estimateWinRate(difficulty);
@@ -231,6 +241,28 @@ export const GameSetup: React.FC<GameSetupProps> = ({
               <span>-{betAmount} tokens</span>
             </div>
           </div>
+        </div>
+
+        {/* Sound Toggle */}
+        <div className="setup-field sound-toggle-field">
+          <label className="sound-toggle-label">
+            <input
+              type="checkbox"
+              checked={soundEnabled}
+              onChange={(e) => {
+                const enabled = e.target.checked;
+                setSoundEnabled(enabled);
+                soundManager.setEnabled(enabled);
+                if (enabled) {
+                  soundManager.playCardFlip();
+                  soundManager.playMenuMusic();
+                }
+              }}
+              className="sound-checkbox"
+            />
+            <span className="sound-icon">{soundEnabled ? "🔊" : "🔇"}</span>
+            <span>Sound Effects & Music</span>
+          </label>
         </div>
 
         <button className="btn-primary start-btn" onClick={handleStart}>

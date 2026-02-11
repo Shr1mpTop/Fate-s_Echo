@@ -4,6 +4,7 @@ import { BattleResult, RoundResult } from "../engine/battleEngine";
 import { CardDisplay } from "./CardDisplay";
 import { HealthBar } from "./HealthBar";
 import { BattleEffects, EffectTrigger } from "./BattleEffects";
+import { soundManager } from "../utils/soundManager";
 
 /**
  * Turn-based battle phases per round:
@@ -88,6 +89,14 @@ export const BattleScene: React.FC<BattleSceneProps> = ({
     [battleResult.enemyMaxHp],
   );
 
+  // Play battle music on mount
+  useEffect(() => {
+    soundManager.playBattleMusic();
+    return () => {
+      // Don't stop music here, let GameOver handle it
+    };
+  }, []);
+
   // Sync HP updates with damage number visibility (delay ~300ms so
   // the floating number has time to animate in before the bar starts moving)
   const HP_SYNC_DELAY = 300 / battleSpeed;
@@ -127,6 +136,7 @@ export const BattleScene: React.FC<BattleSceneProps> = ({
 
         case "deal":
           // Cards dealt face-down → now update displayed card data and flip
+          soundManager.playCardDeal();
           if (currentRound) {
             setDisplayedPlayerCard(currentRound.playerCard);
             setDisplayedEnemyCard(currentRound.enemyCard);
@@ -136,6 +146,7 @@ export const BattleScene: React.FC<BattleSceneProps> = ({
 
         case "flip":
           // Flip done → START player attack (VFX + label appear NOW)
+          soundManager.playCardFlip();
           if (currentRound) {
             const pCard = currentRound.playerCard;
             setAttackingLabel(`⚔ ${pCard.name} attacks!`);
@@ -146,6 +157,28 @@ export const BattleScene: React.FC<BattleSceneProps> = ({
               specialEffects: currentRound.specialEffects,
               side: "enemy",
             });
+            // Play attack sound
+            if (currentRound.isCritical) {
+              soundManager.playCritical();
+            } else {
+              soundManager.playAttack(
+                pCard.suit,
+                pCard.type === "major",
+                currentRound.playerDamageDealt,
+              );
+            }
+            // Play effect sound for major arcana
+            if (pCard.effect) {
+              setTimeout(() => {
+                soundManager.playEffect(pCard.effect!.type);
+              }, 400);
+            }
+            // Play heal sound if healing
+            if (currentRound.playerHeal > 0) {
+              setTimeout(() => {
+                soundManager.playHeal();
+              }, 600);
+            }
           }
           setPhase("player-attack");
           break;
@@ -166,6 +199,24 @@ export const BattleScene: React.FC<BattleSceneProps> = ({
                 side: "player",
               });
             });
+            // Play enemy attack sound
+            soundManager.playAttack(
+              eCard.suit,
+              eCard.type === "major",
+              currentRound.enemyDamageDealt,
+            );
+            // Play effect sound for major arcana
+            if (eCard.effect) {
+              setTimeout(() => {
+                soundManager.playEffect(eCard.effect!.type);
+              }, 400);
+            }
+            // Play heal sound if enemy healing
+            if (currentRound.enemyHeal > 0) {
+              setTimeout(() => {
+                soundManager.playHeal();
+              }, 600);
+            }
           }
           setPhase("enemy-attack");
           break;

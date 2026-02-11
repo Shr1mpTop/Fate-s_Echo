@@ -1,6 +1,7 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { BattleResult } from "../engine/battleEngine";
 import { DIFFICULTIES } from "../engine/difficulty";
+import { soundManager } from "../utils/soundManager";
 
 interface GameOverProps {
   battleResult: BattleResult;
@@ -27,6 +28,22 @@ export const GameOver: React.FC<GameOverProps> = ({
     seed,
     seedHash,
   } = battleResult;
+
+  // Play victory/defeat sound on mount
+  useEffect(() => {
+    if (playerWon) {
+      soundManager.playVictory();
+    } else if (!isDraw) {
+      soundManager.playDefeat();
+    }
+
+    // Play game over background music
+    soundManager.playGameOverMusic();
+
+    return () => {
+      soundManager.stopBackgroundMusic();
+    };
+  }, [playerWon, isDraw]);
 
   const diff = DIFFICULTIES[difficultyId];
   const resultText = isDraw ? "DRAW" : playerWon ? "VICTORY" : "DEFEAT";
