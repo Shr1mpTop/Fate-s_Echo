@@ -1,16 +1,16 @@
 /**
- * Fate's Echo - Quick Deployment Script
+ * Fate's Echo - Quick Deployment Script (VRF v2.5)
  *
  * Copy and paste this into Remix console to deploy quickly
  */
 
-// Sepolia VRF Configuration
-const VRF_COORDINATOR = "0x8103B0A8A00be2DDC778e6e7eaa21791Cd364625";
-const KEY_HASH = "0x474e34a077df58807dbe9c96d3c009b23b3c6d0cce433e59bbf5b34f823bc56c";
+// Sepolia VRF v2.5 Configuration
+const VRF_COORDINATOR = "0x9DdfaCa8183c41ad55329BdeeD9F6A8d53168B1B";
+const KEY_HASH = "0x787d74caea10b2b357790d5b5247c2f63d1d91572a9846f780606e4d953677ae";
 const CALLBACK_GAS_LIMIT = 500000;
 
-// Replace with your actual subscription ID
-const YOUR_SUBSCRIPTION_ID = 1234; // ⚠️ CHANGE THIS!
+// Replace with your actual subscription ID (uint256)
+const YOUR_SUBSCRIPTION_ID = "92203804540253177398615463812268143329720836751227537635235006783480287060039"; // ⚠️ CHANGE THIS!
 
 // Deployment function
 async function deployFateEcho() {
