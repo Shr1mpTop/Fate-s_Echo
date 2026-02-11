@@ -25,7 +25,8 @@ class SoundManager {
   private enabled: boolean = true;
   private volume: number = 0.5;
   private bgMusicVolume: number = 0.3;
-  private fadeInterval: number | null = null;
+  private fadeIntervals: Set<number> = new Set();
+  private pendingTimeouts: Set<number> = new Set();
 
   constructor() {
     this.preloadSounds();
@@ -99,25 +100,22 @@ class SoundManager {
   // ─── Background Music Control ────────────────────────────────────────────
 
   private fadeOut(audio: HTMLAudioElement, duration: number = 1000) {
-    if (this.fadeInterval) {
-      clearInterval(this.fadeInterval);
-    }
-
     const startVolume = audio.volume;
+    if (startVolume <= 0) { audio.pause(); return; }
     const step = startVolume / (duration / 50);
 
-    this.fadeInterval = window.setInterval(() => {
+    const id = window.setInterval(() => {
       if (audio.volume > step) {
         audio.volume = Math.max(0, audio.volume - step);
       } else {
         audio.volume = 0;
         audio.pause();
-        if (this.fadeInterval) {
-          clearInterval(this.fadeInterval);
-          this.fadeInterval = null;
-        }
+        audio.currentTime = 0;
+        clearInterval(id);
+        this.fadeIntervals.delete(id);
       }
     }, 50);
+    this.fadeIntervals.add(id);
   }
 
   private fadeIn(
@@ -125,26 +123,30 @@ class SoundManager {
     targetVolume: number,
     duration: number = 1000,
   ) {
-    if (this.fadeInterval) {
-      clearInterval(this.fadeInterval);
-    }
-
     audio.volume = 0;
     audio.play().catch((err) => console.warn("Music play failed:", err));
 
     const step = targetVolume / (duration / 50);
 
-    this.fadeInterval = window.setInterval(() => {
+    const id = window.setInterval(() => {
       if (audio.volume < targetVolume - step) {
         audio.volume = Math.min(targetVolume, audio.volume + step);
       } else {
         audio.volume = targetVolume;
-        if (this.fadeInterval) {
-          clearInterval(this.fadeInterval);
-          this.fadeInterval = null;
-        }
+        clearInterval(id);
+        this.fadeIntervals.delete(id);
       }
     }, 50);
+    this.fadeIntervals.add(id);
+  }
+
+  /** Schedule a timeout that will be auto-cleared on stopBackgroundMusic */
+  private scheduleBg(fn: () => void, delay: number) {
+    const id = window.setTimeout(() => {
+      this.pendingTimeouts.delete(id);
+      fn();
+    }, delay);
+    this.pendingTimeouts.add(id);
   }
 
   private switchBackgroundMusic(
@@ -207,11 +209,11 @@ class SoundManager {
     this.fadeIn(startLevel, this.bgMusicVolume, 800);
 
     // Transition to battle music after 2.5 seconds
-    setTimeout(() => {
+    this.scheduleBg(() => {
       if (this.currentBgMusicName === "start-level") {
         this.fadeOut(startLevel, 1000);
 
-        setTimeout(() => {
+        this.scheduleBg(() => {
           this.currentBgMusic = battle;
           this.currentBgMusicName = "battle";
           battle.currentTime = 0;
@@ -237,7 +239,7 @@ class SoundManager {
     }
 
     // Play scream
-    setTimeout(() => {
+    this.scheduleBg(() => {
       this.currentBgMusic = scream;
       this.currentBgMusicName = "scream";
       scream.currentTime = 0;
@@ -250,9 +252,28 @@ class SoundManager {
    * Stop all background music
    */
   stopBackgroundMusic() {
-    if (this.currentBgMusic && !this.currentBgMusic.paused) {
-      this.fadeOut(this.currentBgMusic, 1000);
+    // Clear all pending scheduled transitions
+    for (const id of this.pendingTimeouts) {
+      clearTimeout(id);
     }
+    this.pendingTimeouts.clear();
+
+    // Clear all active fade intervals
+    for (const id of this.fadeIntervals) {
+      clearInterval(id);
+    }
+    this.fadeIntervals.clear();
+
+    // Stop ALL background music audio elements, not just current
+    this.bgMusic.forEach((audio) => {
+      if (!audio.paused) {
+        audio.volume = 0;
+        audio.pause();
+        audio.currentTime = 0;
+      }
+    });
+
+    this.currentBgMusic = null;
     this.currentBgMusicName = null;
   }
 
