@@ -1,61 +1,233 @@
-# Fate's Echo — Web3 Casino Platform
+# Fate's Echo — Provably Fair On-Chain Tarot Battle
 
 <div align="center">
-  <img src="https://img.shields.io/badge/React-19.0.0-blue" alt="React">
-  <img src="https://img.shields.io/badge/TypeScript-5.7.0-blue" alt="TypeScript">
-  <img src="https://img.shields.io/badge/Vite-6.1.0-yellow" alt="Vite">
-  <img src="https://img.shields.io/badge/Chainlink-VRF-orange" alt="Chainlink VRF">
-  <img src="https://img.shields.io/badge/SC6107-Option%204-green" alt="SC6107 Option 4">
+
+  <img src="https://img.shields.io/badge/Solidity-0.8.19-363636?logo=solidity" alt="Solidity">
+  <img src="https://img.shields.io/badge/Chainlink_VRF-v2.5-375BD2?logo=chainlink" alt="Chainlink VRF v2.5">
+  <img src="https://img.shields.io/badge/React-19-61DAFB?logo=react" alt="React 19">
+  <img src="https://img.shields.io/badge/TypeScript-5.7-3178C6?logo=typescript" alt="TypeScript">
+  <img src="https://img.shields.io/badge/Vite-6.1-646CFF?logo=vite" alt="Vite">
+  <img src="https://img.shields.io/badge/wagmi-3.4-1C1C1C" alt="wagmi">
+  <img src="https://img.shields.io/badge/Network-Sepolia-6B8AFF" alt="Sepolia">
+  <img src="https://img.shields.io/badge/SC6107-Option%204-4CAF50" alt="SC6107">
+
+  **A fully on-chain tarot card battle game with Chainlink VRF randomness, ETH wagering, and mathematically proven house edge.**
+
+  [Live Demo](#-quick-start) · [Contract on Etherscan](https://sepolia.etherscan.io/address/0x441846effc4836570e80dbbb43ff041a8ea14910) · [House Edge Analysis](doc/HOUSE_EDGE_ANALYSIS.md)
+
 </div>
-
-## 🌟 项目概述
-
-**Fate's Echo** 是一个基于区块链的可验证随机游戏平台，专为 SC6107 区块链开发课程设计。该项目实现了 **Option 4: On-Chain Verifiable Random Game Platform** 的所有核心要求。
-
-### 🎯 核心特性
-
-- ✅ **可验证随机性**: 集成 Chainlink VRF (计划中)
-- ✅ **游戏多样性**: 实现至少 2 种游戏类型
-- ✅ **经济系统**: 支持投注和自动派发
-- ✅ **公平性验证**: 透明的随机数生成证明
-- ✅ **防作弊机制**: Commit-Reveal 模式
-
-### 🎮 当前游戏
-
-#### Fate's Echo (命运回响) — 塔罗牌对战
-
-- **类型**: 塔罗牌自动对战游戏
-- **机制**: 种子决定命运的确定性战斗
-- **资源**: 78 张塔罗牌 (22 大阿卡纳 + 56 小阿卡纳)
-- **玩法**: 5 回合自动战斗，包含事件卡和数值战斗
 
 ---
 
-## 🚀 快速开始
+## Overview
 
-### 📋 前置要求
+**Fate's Echo** is a provably fair blockchain game where players wager ETH on a 5-round tarot card battle. A Chainlink VRF seed deterministically generates all 10 cards — the same seed always produces the identical battle. The smart contract independently resolves the fight using the same `keccak256`-based algorithm as the frontend, ensuring trustless settlement.
 
-- Node.js 18+
-- npm 或 yarn
+**Key Metrics** (Monte Carlo, N = 1,000,000):
 
-### 🛠️ 安装与运行
+| Metric | Value |
+|--------|-------|
+| Player Win Rate | 48.01% |
+| Draw Rate | 4.46% |
+| House Edge (1.9× payout) | 4.33% |
+| Kelly Criterion (player) | −9.77% |
+
+> House edge sits between European Roulette (2.7%) and American Roulette (5.26%) — competitive for a blockchain game with full provable fairness.
+
+---
+
+## Architecture
+
+```
+┌──────────────────────────────────────────────────────────────────┐
+│                         Player (Browser)                         │
+│  React 19 + TypeScript + Vite                                    │
+│  ┌────────────┐  ┌──────────────┐  ┌──────────────────────────┐  │
+│  │ GameSetup  │→ │LoadingScreen │→ │  BattleScene (animation) │  │
+│  │ (bet ETH)  │  │ (wait VRF)  │  │  5-round card battle     │  │
+│  └────────────┘  └──────────────┘  └──────────┬───────────────┘  │
+│                                               ↓                  │
+│  ┌──────────────────┐    ┌─────────────────────────────────────┐ │
+│  │  SettlingScreen   │ ←  │  GameOver (result + Etherscan links)│ │
+│  │  (on-chain settle)│    └─────────────────────────────────────┘ │
+│  └──────────────────┘                                            │
+├──────────────────── wagmi / viem ─────────────────────────────────┤
+│                                                                  │
+│  ┌──────────────────────────────────────────────────────────┐    │
+│  │  FateEcho.sol (Sepolia)                                  │    │
+│  │  playGame() → VRF Request → fulfillRandomWords(seed)     │    │
+│  │  settleBattle() → _resolveBattle(seed) → payout ETH      │    │
+│  └──────────────────────────┬───────────────────────────────┘    │
+│                             │                                    │
+│                    Chainlink VRF v2.5                             │
+└──────────────────────────────────────────────────────────────────┘
+```
+
+### Game Flow
+
+1. **Bet** — Player connects MetaMask, selects bet (0.001–1 ETH), calls `playGame()`
+2. **VRF** — Chainlink VRF v2.5 generates a cryptographic random seed on-chain
+3. **Battle** — Frontend resolves 5 rounds locally using the VRF seed (identical algorithm to contract)
+4. **Animate** — Player watches the tarot battle unfold with full animations and sound
+5. **Settle** — Player calls `settleBattle()`, contract re-computes the battle and pays out:
+   - **Win** → 1.9× bet (after 5% house edge)
+   - **Draw** → full refund
+   - **Lose** → bet forfeited
+
+---
+
+## Game Mechanics
+
+### Card System — 78 Tarot Cards
+
+| Category | Cards | Role |
+|----------|-------|------|
+| **Major Arcana** (0–21) | The Fool, The Magician, … The World | Special effects: damage or healing. Even ID = damage, odd ID = heal. Value = `5 + (cardId × 3) % 16` → range [5, 20] |
+| **Minor Arcana** (22–77) | 4 suits × 14 ranks | Standard combat. Value = `((cardId − 22) % 14) + 1` → range [1, 14] |
+
+### Card Generation
+
+```
+cardId = keccak256(abi.encodePacked(seed, nonce)) % 78
+```
+Player cards use even nonces (0, 2, 4, 6, 8), enemy cards use odd nonces (1, 3, 5, 7, 9).
+
+### Round Resolution (4 paths)
+
+| Matchup | Resolution |
+|---------|-----------|
+| **Major vs Major** | `hash = keccak256(pCard, eCard)` → pDmg = 5 + hash%11, eDmg = 5 + (hash>>8)%11 |
+| **Major vs Minor** | Major applies effect (damage or heal); minor retaliates `⌊minorValue / 2⌋` |
+| **Minor vs Minor** | Compare values (with +3 counter bonus); winner deals `diff + 2`, loser deals `1`; tie = 2/2 |
+
+### Suit Counter System
+
+```
+🔥 Wands → 🪙 Pentacles → ⚔️ Swords → 🏆 Cups → 🔥 Wands
+```
+Counter grants **+3** value bonus in minor-vs-minor combat.
+
+### HP System
+
+- Starting HP: **30** for both sides
+- Total Rounds: **5** (or until one side reaches 0 HP)
+- Healing from Major Arcana is capped at MAX_HP
+- Saturating subtraction (HP never goes below 0)
+
+---
+
+## Tech Stack
+
+| Layer | Technology | Purpose |
+|-------|-----------|---------|
+| **Smart Contract** | Solidity 0.8.19 | On-chain battle resolution, ETH custody, payout |
+| **Randomness** | Chainlink VRF v2.5 | Cryptographically verifiable random seeds |
+| **Frontend** | React 19 + TypeScript + Vite | Interactive game UI with battle animations |
+| **Web3 Integration** | wagmi 3.4 + viem 2.45 | Wallet connection, contract interaction |
+| **State Management** | @tanstack/react-query | Balance caching, async state |
+| **Hashing** | ethers.js 6.16 | `keccak256` / `solidityPacked` (matching contract) |
+| **Network** | Sepolia Testnet | Deployment and testing |
+
+---
+
+## Project Structure
+
+```
+Web3_Casino/
+├── contracts/                          # Smart Contracts
+│   ├── FateEcho.sol                    # Main game contract (465 lines)
+│   ├── FateEchoDeployer.sol            # Remix deployment helper
+│   ├── config.js                       # Chainlink VRF parameters
+│   └── deploy.js / test.js / networks.js
+│
+├── frontend/                           # React dApp
+│   ├── src/
+│   │   ├── engine/                     # Deterministic game logic
+│   │   │   ├── battleEngine.ts         # keccak256-based battle (contract-matching)
+│   │   │   ├── cardData.ts             # 78 tarot card definitions
+│   │   │   ├── contractCardGen.ts      # Card generation helpers
+│   │   │   ├── difficulty.ts           # Difficulty parameters
+│   │   │   └── seedEngine.ts           # Seed normalization
+│   │   ├── web3/                       # Blockchain integration
+│   │   │   ├── useFateEcho.ts          # Main game hook (imperative async/await)
+│   │   │   ├── contract.ts             # ABI + contract address
+│   │   │   └── wagmiConfig.ts          # wagmi / Sepolia config
+│   │   ├── components/                 # UI Components
+│   │   │   ├── GameSetup.tsx           # Wallet connect + bet selection
+│   │   │   ├── LoadingScreen.tsx       # VRF wait screen (fun messages)
+│   │   │   ├── BattleScene.tsx         # 5-round battle animation
+│   │   │   ├── SettlingScreen.tsx      # On-chain settlement screen
+│   │   │   ├── GameOver.tsx            # Results + Etherscan verification
+│   │   │   ├── CardDisplay.tsx         # Tarot card renderer
+│   │   │   ├── CardGallery.tsx         # Browse all 78 cards
+│   │   │   ├── HowToPlay.tsx           # Rules explanation
+│   │   │   ├── HealthBar.tsx           # Animated HP bars
+│   │   │   ├── BattleEffects.tsx       # Visual battle effects
+│   │   │   └── SpaceBackground.tsx     # Animated star background
+│   │   ├── utils/
+│   │   │   └── soundManager.ts         # BGM + SFX management
+│   │   ├── App.tsx                     # Phase router (setup→loading→battle→settling→gameover)
+│   │   ├── main.tsx                    # WagmiProvider + QueryClientProvider
+│   │   └── index.css                   # Dark mystical theme (~1500 lines)
+│   ├── monte_carlo.ts                  # Monte Carlo simulation (1M games)
+│   └── package.json
+│
+├── doc/                                # Documentation
+│   ├── HOUSE_EDGE_ANALYSIS.md          # Scientific house edge report
+│   ├── REMIX_DEPLOY_GUIDE.md           # Contract deployment guide
+│   ├── PROJECT_EXPLANATION.md          # Technical deep-dive
+│   └── PROJECT_REQUIREMENTS.md         # SC6107 requirements
+│
+├── resources/                          # Game assets
+│   ├── Tarot Playing Cards/            # 78 tarot card images
+│   ├── SpaceBackground/               # Background assets
+│   └── monogram/                       # Font assets
+│
+├── .env                                # Environment config (contract address, VRF params)
+└── .env.example                        # Template for env config
+```
+
+---
+
+## Quick Start
+
+### Prerequisites
+
+- **Node.js** 18+
+- **MetaMask** browser extension
+- **Sepolia ETH** (from a [faucet](https://sepoliafaucet.com))
+
+### 1. Clone & Install
 
 ```bash
-# 克隆项目
 git clone https://github.com/Shr1mpTop/Web3_Casino.git
-cd Web3_Casino
-
-# 安装依赖
-cd frontend
+cd Web3_Casino/frontend
 npm install
+```
 
-# 启动开发服务器
+### 2. Configure Environment
+
+```bash
+cp ../.env.example ../.env
+```
+
+The default `.env` points to the deployed contract. Edit if redeploying:
+
+```env
+VITE_FATE_ECHO_CONTRACT_ADDRESS=0x441846effc4836570e80dbbb43ff041a8ea14910
+VITE_WIN_MULTIPLIER=1.9
+VITE_HOUSE_EDGE=5
+```
+
+### 3. Run
+
+```bash
 npm run dev
 ```
 
-访问 `http://localhost:5173` 开始游戏！
+Open `http://localhost:5173`, connect MetaMask (Sepolia), place a bet, and battle!
 
-### 🏗️ 构建生产版本
+### 4. Build for Production
 
 ```bash
 npm run build
@@ -64,267 +236,184 @@ npm run preview
 
 ---
 
-## 🎯 游戏玩法
+## Smart Contract
 
-### Fate's Echo 规则
+### Deployed Contract
 
-#### 🎴 卡牌系统
+| Item | Value |
+|------|-------|
+| Network | Sepolia Testnet |
+| Address | [`0x441846effc4836570e80dbbb43ff041a8ea14910`](https://sepolia.etherscan.io/address/0x441846effc4836570e80dbbb43ff041a8ea14910) |
+| Solidity | 0.8.19 |
+| VRF | Chainlink VRF v2.5 |
+| Coordinator | `0x9DdfaCa8183c41ad55329BdeeD9F6A8d53168B1B` |
 
-- **大阿卡纳 (Major Arcana)**: 22 张事件卡，具有特殊效果
-- **小阿卡纳 (Minor Arcana)**: 56 张战斗卡，包含数值和花色
+### Key Functions
 
-#### ⚔️ 战斗机制
+| Function | Type | Description |
+|----------|------|-------------|
+| `playGame()` | `payable` | Accept ETH bet, request VRF random seed |
+| `settleBattle(requestId)` | `external` | Resolve battle on-chain, pay winner |
+| `isSeedReady(requestId)` | `view` | Check if VRF callback completed |
+| `getGame(requestId)` | `view` | Fetch full game result |
+| `getStats()` | `view` | Total volume, payouts, balance, game count |
 
-1. **种子生成**: 输入种子或随机生成
-2. **洗牌**: 确定性算法打乱 78 张牌
-3. **发牌**: 每回合各抽一张牌进行对决
-4. **判定规则**:
-   - **双事件卡**: 神仙打架，触发特殊交互
-   - **单事件卡**: 事件效果优先触发
-   - **数值战斗**: 点数 + 花色克制 (+3 点数加成)
+### Payout Logic
 
-#### 🌟 花色克制
-
-- 🔥 **权杖 (Wands)** → 🌍 **钱币 (Pentacles)**
-- 🌍 **钱币 (Pentacles)** → 🌪️ **宝剑 (Swords)**
-- 🌪️ **宝剑 (Swords)** → 💧 **圣杯 (Cups)**
-- 💧 **圣杯 (Cups)** → 🔥 **权杖 (Wands)**
-
-#### 🎭 事件卡效果示例
-
-- **愚者 (The Fool)**: 闪避本回合伤害
-- **死神 (Death)**: 造成 15 点真实伤害
-- **塔 (The Tower)**: 双方各承受 10 点伤害
-- **世界 (The World)**: 造成 20 点伤害
-
-### 🔮 可验证公平性
-
-每个游戏都基于**种子 (Seed)** 确定性生成：
-
-- 相同种子 = 完全相同的战斗过程
-- 前端算法与合约逻辑一致
-- 支持第三方验证战斗结果
-
----
-
-## 🏛️ 架构设计
-
-### 📁 项目结构
-
-```
-frontend/                        # 🎮 前端应用
-├── src/
-│   ├── engine/                   # 🎲 游戏逻辑引擎
-│   │   ├── seedEngine.ts         # 确定性随机数生成器
-│   │   ├── cardData.ts           # 78张塔罗牌数据定义
-│   │   └── battleEngine.ts       # 5回合战斗引擎
-│   ├── components/               # ⚛️ React 组件
-│   │   ├── GameSetup.tsx         # 游戏设置界面
-│   │   ├── BattleScene.tsx       # 战斗场景动画
-│   │   ├── CardDisplay.tsx       # 卡牌显示组件
-│   │   ├── HealthBar.tsx         # 血条组件
-│   │   └── GameOver.tsx          # 结算界面
-│   ├── App.tsx                   # 主应用组件
-│   └── index.css                 # 🎨 样式 (暗色神秘主题)
-├── resources/                    # 🖼️ 塔罗牌图片资源
-└── package.json                  # 📦 依赖配置
-
-contracts/                        # 🏛️ 智能合约
-├── FateEcho.sol                  # 主游戏合约 (VRF 集成)
-├── FateEchoDeployer.sol          # 部署助手合约
-└── config.js                     # VRF 配置参数
-
-CONTRACT_README.md                # 📖 合约部署指南
-PROJECT_REQUIREMENTS.md           # 📋 课程要求文档
-```
-
-### 🔧 技术栈
-
-#### 前端框架
-- **React 19**: 现代 React 特性
-- **TypeScript**: 类型安全
-- **Vite**: 快速构建工具
-
-#### 区块链集成
-- **Chainlink VRF v2**: 可验证随机数生成
-- **Solidity 0.8.19**: 智能合约开发
-- **Sepolia 测试网**: 部署和测试网络
-
-#### 游戏引擎
-- **确定性 PRNG**: mulberry32 算法
-- **Fisher-Yates 洗牌**: 公平的牌组随机化
-- **状态机**: React Hooks 管理游戏状态
-
-#### 样式设计
-- **暗色神秘主题**: 金色 accent
-- **CSS 动画**: 翻牌、伤害数字、发光效果
-- **响应式设计**: 支持移动端
-
-### 🔄 工作流程
-
-```mermaid
-graph TD
-    A[输入种子] --> B[生成随机数]
-    B --> C[Fisher-Yates 洗牌]
-    C --> D[发牌给玩家/敌人]
-    D --> E[5回合战斗循环]
-    E --> F[计算最终结果]
-    F --> G[显示战斗动画]
-    G --> H[结算界面]
-```
-
----
-
-## 🏛️ 智能合约
-
-### FateEcho.sol - 主游戏合约
-
-基于 **Chainlink VRF v2** 的可验证随机游戏合约：
-
-#### 核心功能
-- **VRF 集成**: 请求可验证随机数种子
-- **ETH 赌注**: 直接接收 Sepolia ETH 作为赌注
-- **确定性战斗**: 使用 VRF 种子重现前端战斗逻辑
-- **自动派发**: 获胜者自动领取奖金 (1.9x 倍率，扣除 5% 平台抽成)
-
-#### 合约参数
 ```solidity
-// Sepolia VRF 配置
-VRF_COORDINATOR: 0x8103B0A8A00be2DDC778e6e7eaa21791Cd364625
-KEY_HASH: 0x474e34a077df58807dbe9c96d3c009b23b3c6d0cce433e59bbf5b34f823bc56c
-CALLBACK_GAS_LIMIT: 500000
-
-// 游戏配置
-MIN_BET: 0.001 ETH
-MAX_BET: 1 ETH
-HOUSE_EDGE: 5%
-WIN_MULTIPLIER: 1.9x
-```
-
-#### 部署步骤
-1. 在 [Remix IDE](https://remix.ethereum.org) 中打开 `contracts/FateEcho.sol`
-2. 配置你的 Chainlink VRF Subscription ID
-3. 部署到 Sepolia 测试网
-4. 记录合约地址用于前端集成
-
-#### 详细部署指南
-📖 详见 [`CONTRACT_README.md`](CONTRACT_README.md)
-
-## 🎯 开发路线图
-
-### ✅ 已完成 (MVP)
-
-- [x] 纯前端游戏实现
-- [x] 确定性战斗算法
-- [x] 塔罗牌数据定义
-- [x] 战斗动画和 UI
-- [x] 可验证公平性证明
-- [x] Solidity 智能合约开发 (VRF 集成)
-- [x] 经济系统 (ETH 投注/自动派发)
-- [x] Sepolia 测试网部署配置
-
-### 🚧 进行中
-
-- [ ] Remix 部署和测试
-- [ ] 第二个游戏实现 (Dice/High-Low)
-
-### 🔜 计划中
-
-- [ ] Web3 前端集成 (Wagmi/Ethers)
-- [ ] 多链支持 (Amoy 测试网)
-- [ ] 完整 dApp 部署
-
-### 🎨 增强功能
-
-- [ ] NFT 塔罗牌收藏
-- [ ] 成就系统
-- [ ] 排行榜
-- [ ] 社交功能
-
----
-
-## 🔍 核心算法详解
-
-### 种子生成
-
-```typescript
-// 使用字符串哈希作为种子
-const seedNum = hashString(seedString);
-const rng = createRNG(seedNum);
-```
-
-### 洗牌算法
-
-```typescript
-// Fisher-Yates 确定性洗牌
-function shuffle<T>(array: T[]): T[] {
-  const arr = [...array];
-  for (let i = arr.length - 1; i > 0; i--) {
-    const j = rng.nextInt(0, i + 1);
-    [arr[i], arr[j]] = [arr[j], arr[i]];
-  }
-  return arr;
-}
-```
-
-### 战斗判定
-
-```typescript
-// 优先级: 双事件 > 单事件 > 数值战斗
-if (bothMajor) {
-  // 神仙打架模式
-} else if (oneMajor) {
-  // 事件效果优先
+if (playerWon) {
+    payout = betAmount × 2 × (100 − HOUSE_EDGE) / 100;  // 1.9× bet
+} else if (isDraw) {
+    payout = betAmount;  // full refund
 } else {
-  // 数值 + 克制计算
+    payout = 0;  // house keeps bet
 }
+```
+
+### Gas Optimization — Two-Phase Settlement
+
+The VRF callback (`fulfillRandomWords`) only stores the seed (~50k gas). Battle computation runs in `settleBattle()` called by the player, avoiding callback gas limit issues.
+
+### Deployment
+
+Deploy via [Remix IDE](https://remix.ethereum.org). See [`doc/REMIX_DEPLOY_GUIDE.md`](doc/REMIX_DEPLOY_GUIDE.md) for step-by-step instructions.
+
+---
+
+## Provable Fairness
+
+### How It Works
+
+1. **Chainlink VRF** generates a cryptographically random `uint256` seed — neither the player nor the contract owner can predict or manipulate it
+2. **Deterministic resolution** — `keccak256(seed, nonce)` generates each card. The same seed always produces the exact same 5-round battle
+3. **Dual computation** — Frontend and contract use identical algorithms. Players can verify any game by replaying the seed
+4. **On-chain transparency** — All bets, seeds, results, and payouts are publicly verifiable on Etherscan
+
+### Verification
+
+Given a VRF seed, anyone can independently reproduce the battle:
+
+```typescript
+import { resolveBattle } from "./engine/battleEngine";
+const result = resolveBattle("123456789...");  // VRF seed as string
+console.log(result.playerWon, result.playerFinalHp, result.enemyFinalHp);
 ```
 
 ---
 
-## 🤝 贡献指南
+## House Edge Analysis
 
-### 开发环境设置
+A Monte Carlo simulation of **1,000,000 games** validates the economic model.
+
+### Results Summary
+
+| Metric | Value |
+|--------|-------|
+| Win Rate | 48.01% ± 0.05% (95% CI) |
+| Draw Rate | 4.46% |
+| Loss Rate | 47.53% |
+| Fair Multiplier | 1.990× |
+| Current Multiplier | 1.900× |
+| **House Edge** | **4.33%** |
+| Single-bet Std Dev | 0.929 ETH / ETH |
+
+### Expected Value
+
+$$E[X] = 0.4801 \times 1.9 + 0.0446 \times 1.0 + 0.4753 \times 0 - 1 = -0.0433$$
+
+The negative Kelly criterion (−9.77%) confirms the house holds a mathematical edge on every bet.
+
+### Comparison
+
+| Game | House Edge |
+|------|-----------|
+| Blackjack (basic strategy) | 0.5–2% |
+| European Roulette | 2.70% |
+| **Fate's Echo** | **4.33%** |
+| American Roulette | 5.26% |
+| Slot Machines | 2–15% |
+
+Full analysis with variance, ruin probability, and profit trajectory: [`doc/HOUSE_EDGE_ANALYSIS.md`](doc/HOUSE_EDGE_ANALYSIS.md)
+
+### Run the Simulation
 
 ```bash
-# 安装依赖
-npm install
-
-# 启动开发服务器
-npm run dev
-
-# 构建检查
-npm run build
+cd frontend
+npx tsx monte_carlo.ts 1000000
 ```
-
-### 代码规范
-
-- 使用 TypeScript 严格模式
-- 组件使用函数式组件 + Hooks
-- 游戏逻辑与 UI 分离
-- 注释重要算法
-
-### 测试验证
-
-- 相同种子应产生相同结果
-- 验证战斗算法的确定性
-- 检查 UI 动画流畅性
 
 ---
 
-## 📜 许可证
+## Development
 
-本项目为 SC6107 课程项目，遵循学术诚信原则。
+### Prerequisites
 
-## 🙏 致谢
+- Node.js 18+, npm
+- MetaMask + Sepolia ETH
+- (Optional) Remix IDE for contract deployment
 
-- **塔罗牌资源**: [Rider-Waite Tarot](https://en.wikipedia.org/wiki/Rider%E2%80%93Waite_Tarot)
-- **Chainlink VRF**: 为可验证随机性提供基础设施
-- **React & Vite**: 优秀的开发体验
+### Scripts
+
+```bash
+cd frontend
+npm run dev          # Start dev server (localhost:5173)
+npm run build        # TypeScript check + production build
+npm run preview      # Preview production build
+npx tsc --noEmit     # Type-check only
+npx tsx monte_carlo.ts 1000000  # Run house edge simulation
+```
+
+### Key Design Decisions
+
+1. **Imperative async/await** over reactive wagmi hooks — eliminates React re-render timing issues in multi-step blockchain flows
+2. **Two-phase settlement** — VRF callback stores only the seed (cheap), battle computation runs in `settleBattle()` (player-paid gas)
+3. **keccak256 card generation** — `hash % 78` produces uniform card distribution, matching Solidity's native hashing
+4. **AbortController** for cancellation — prevents stale state when user navigates away mid-flow
+
+---
+
+## Documentation
+
+| Document | Description |
+|----------|-------------|
+| [`doc/HOUSE_EDGE_ANALYSIS.md`](doc/HOUSE_EDGE_ANALYSIS.md) | Monte Carlo simulation results, payout optimization, risk analysis |
+| [`doc/REMIX_DEPLOY_GUIDE.md`](doc/REMIX_DEPLOY_GUIDE.md) | Step-by-step contract deployment on Remix |
+| [`doc/PROJECT_EXPLANATION.md`](doc/PROJECT_EXPLANATION.md) | Technical architecture deep-dive |
+| [`doc/PROJECT_REQUIREMENTS.md`](doc/PROJECT_REQUIREMENTS.md) | SC6107 Option 4 requirements mapping |
+| [`GAS_OPTIMIZATION.md`](GAS_OPTIMIZATION.md) | VRF callback gas optimization notes |
+
+---
+
+## SC6107 Requirements Checklist
+
+| Requirement | Status | Implementation |
+|-------------|--------|---------------|
+| On-chain verifiable randomness | ✅ | Chainlink VRF v2.5 |
+| At least 1 game type | ✅ | 5-round tarot card battle |
+| ETH wagering system | ✅ | 0.001–1 ETH bets via `playGame()` |
+| Automatic payout | ✅ | `settleBattle()` — win/draw/lose |
+| Fairness verification | ✅ | Deterministic keccak256 algorithm, same on frontend + contract |
+| Anti-cheat mechanism | ✅ | VRF seed cannot be predicted; two-phase commit (bet → reveal) |
+| House edge analysis | ✅ | Monte Carlo N=1M, 4.33% edge proven |
+| Deployed on testnet | ✅ | Sepolia — verified and tested |
+
+---
+
+## License
+
+Academic project for SC6107 Blockchain Development. MIT License.
+
+## Acknowledgments
+
+- **Chainlink VRF** — Verifiable randomness infrastructure
+- **Rider-Waite Tarot** — Card artwork reference
+- **wagmi / viem** — Elegant React + Ethereum integration
+- **ethers.js** — keccak256 hashing for contract-matching
 
 ---
 
 <div align="center">
-  <p><strong>🌙 Fate's Echo — Where Destiny Meets Blockchain 🌙</strong></p>
-  <p>种子决定命运，区块链保证公平</p>
+  <strong>🌙 Fate's Echo — Where Destiny Meets Blockchain 🌙</strong>
+  <br>
+  <em>The seed determines fate. The blockchain guarantees fairness.</em>
 </div>
