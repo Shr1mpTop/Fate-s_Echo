@@ -68,7 +68,7 @@ function cloudAlpha(
   return fbm(ux + cNoise, uy + cNoise, 5, seed);
 }
 
-// ─── Color Scheme (mystical deep space: purple / blue / gold) ───────────────
+// ─── Color Schemes ──────────────────────────────────────────────────────────
 
 interface ColorStop {
   r: number;
@@ -76,24 +76,198 @@ interface ColorStop {
   b: number;
 }
 
-const NEBULA_COLORS: ColorStop[] = [
-  { r: 10, g: 10, b: 30 }, // deep background
-  { r: 20, g: 15, b: 50 }, // dark purple
-  { r: 60, g: 30, b: 90 }, // mid purple
-  { r: 100, g: 40, b: 120 }, // vibrant purple
-  { r: 140, g: 60, b: 100 }, // pink-purple
-  { r: 180, g: 90, b: 50 }, // warm orange
-  { r: 212, g: 175, b: 55 }, // gold
-  { r: 230, g: 210, b: 130 }, // pale gold
+interface ColorScheme {
+  name: string;
+  nebula: ColorStop[];
+  stars: ColorStop[];
+  particles: ColorStop[];
+  background: ColorStop;
+}
+
+const COLOR_SCHEMES: ColorScheme[] = [
+  // Mystical Purple-Gold (原始配色)
+  {
+    name: "mystical",
+    nebula: [
+      { r: 10, g: 10, b: 30 },
+      { r: 20, g: 15, b: 50 },
+      { r: 60, g: 30, b: 90 },
+      { r: 100, g: 40, b: 120 },
+      { r: 140, g: 60, b: 100 },
+      { r: 180, g: 90, b: 50 },
+      { r: 212, g: 175, b: 55 },
+      { r: 230, g: 210, b: 130 },
+    ],
+    stars: [
+      { r: 200, g: 210, b: 255 },
+      { r: 255, g: 240, b: 220 },
+      { r: 180, g: 190, b: 255 },
+      { r: 255, g: 220, b: 180 },
+      { r: 212, g: 175, b: 55 },
+      { r: 200, g: 160, b: 255 },
+    ],
+    particles: [
+      { r: 212, g: 175, b: 55 },
+      { r: 180, g: 140, b: 255 },
+      { r: 100, g: 180, b: 255 },
+      { r: 255, g: 200, b: 100 },
+    ],
+    background: { r: 10, g: 10, b: 26 },
+  },
+  // Deep Blue Ocean
+  {
+    name: "ocean",
+    nebula: [
+      { r: 5, g: 10, b: 30 },
+      { r: 10, g: 25, b: 50 },
+      { r: 15, g: 50, b: 90 },
+      { r: 20, g: 80, b: 130 },
+      { r: 30, g: 120, b: 160 },
+      { r: 50, g: 150, b: 180 },
+      { r: 100, g: 200, b: 220 },
+      { r: 150, g: 230, b: 250 },
+    ],
+    stars: [
+      { r: 200, g: 230, b: 255 },
+      { r: 180, g: 220, b: 255 },
+      { r: 255, g: 255, b: 255 },
+      { r: 150, g: 200, b: 255 },
+      { r: 100, g: 200, b: 240 },
+      { r: 120, g: 210, b: 255 },
+    ],
+    particles: [
+      { r: 100, g: 200, b: 240 },
+      { r: 150, g: 230, b: 255 },
+      { r: 80, g: 180, b: 220 },
+      { r: 120, g: 210, b: 250 },
+    ],
+    background: { r: 5, g: 10, b: 25 },
+  },
+  // Crimson Fury (红色主题)
+  {
+    name: "crimson",
+    nebula: [
+      { r: 30, g: 5, b: 10 },
+      { r: 50, g: 10, b: 15 },
+      { r: 90, g: 20, b: 30 },
+      { r: 130, g: 30, b: 40 },
+      { r: 170, g: 40, b: 50 },
+      { r: 200, g: 60, b: 40 },
+      { r: 230, g: 100, b: 50 },
+      { r: 255, g: 150, b: 80 },
+    ],
+    stars: [
+      { r: 255, g: 200, b: 200 },
+      { r: 255, g: 220, b: 210 },
+      { r: 255, g: 180, b: 180 },
+      { r: 255, g: 240, b: 220 },
+      { r: 255, g: 150, b: 100 },
+      { r: 255, g: 200, b: 180 },
+    ],
+    particles: [
+      { r: 255, g: 100, b: 80 },
+      { r: 255, g: 150, b: 100 },
+      { r: 230, g: 80, b: 60 },
+      { r: 255, g: 180, b: 120 },
+    ],
+    background: { r: 20, g: 5, b: 10 },
+  },
+  // Emerald Dream (绿色主题)
+  {
+    name: "emerald",
+    nebula: [
+      { r: 10, g: 25, b: 15 },
+      { r: 15, g: 40, b: 25 },
+      { r: 20, g: 60, b: 40 },
+      { r: 30, g: 90, b: 60 },
+      { r: 40, g: 120, b: 80 },
+      { r: 60, g: 150, b: 100 },
+      { r: 100, g: 200, b: 130 },
+      { r: 150, g: 240, b: 180 },
+    ],
+    stars: [
+      { r: 200, g: 255, b: 220 },
+      { r: 180, g: 255, b: 200 },
+      { r: 220, g: 255, b: 230 },
+      { r: 255, g: 255, b: 240 },
+      { r: 150, g: 240, b: 180 },
+      { r: 180, g: 250, b: 200 },
+    ],
+    particles: [
+      { r: 100, g: 220, b: 150 },
+      { r: 120, g: 240, b: 170 },
+      { r: 80, g: 200, b: 130 },
+      { r: 150, g: 255, b: 190 },
+    ],
+    background: { r: 8, g: 18, b: 12 },
+  },
+  // Violet Storm (紫罗兰主题)
+  {
+    name: "violet",
+    nebula: [
+      { r: 20, g: 5, b: 30 },
+      { r: 40, g: 10, b: 60 },
+      { r: 70, g: 20, b: 100 },
+      { r: 100, g: 30, b: 140 },
+      { r: 140, g: 50, b: 180 },
+      { r: 180, g: 80, b: 200 },
+      { r: 210, g: 120, b: 220 },
+      { r: 240, g: 180, b: 250 },
+    ],
+    stars: [
+      { r: 230, g: 200, b: 255 },
+      { r: 255, g: 220, b: 255 },
+      { r: 200, g: 180, b: 255 },
+      { r: 255, g: 240, b: 255 },
+      { r: 210, g: 150, b: 240 },
+      { r: 220, g: 190, b: 255 },
+    ],
+    particles: [
+      { r: 200, g: 120, b: 230 },
+      { r: 220, g: 150, b: 250 },
+      { r: 180, g: 100, b: 220 },
+      { r: 240, g: 180, b: 255 },
+    ],
+    background: { r: 15, g: 5, b: 22 },
+  },
+  // Amber Sunset (琥珀日落)
+  {
+    name: "amber",
+    nebula: [
+      { r: 30, g: 20, b: 10 },
+      { r: 60, g: 35, b: 15 },
+      { r: 100, g: 60, b: 20 },
+      { r: 150, g: 90, b: 30 },
+      { r: 200, g: 120, b: 40 },
+      { r: 230, g: 150, b: 50 },
+      { r: 255, g: 190, b: 80 },
+      { r: 255, g: 220, b: 130 },
+    ],
+    stars: [
+      { r: 255, g: 240, b: 200 },
+      { r: 255, g: 230, b: 180 },
+      { r: 255, g: 250, b: 220 },
+      { r: 255, g: 220, b: 160 },
+      { r: 255, g: 200, b: 140 },
+      { r: 255, g: 235, b: 190 },
+    ],
+    particles: [
+      { r: 255, g: 180, b: 80 },
+      { r: 255, g: 200, b: 100 },
+      { r: 240, g: 160, b: 60 },
+      { r: 255, g: 220, b: 120 },
+    ],
+    background: { r: 18, g: 12, b: 8 },
+  },
 ];
 
-function sampleColor(t: number): ColorStop {
+function sampleColor(t: number, colorScheme: ColorStop[]): ColorStop {
   const ct = Math.max(0, Math.min(1, t));
-  const idx = ct * (NEBULA_COLORS.length - 1);
+  const idx = ct * (colorScheme.length - 1);
   const i = Math.floor(idx);
   const f = idx - i;
-  const a = NEBULA_COLORS[Math.min(i, NEBULA_COLORS.length - 1)];
-  const b = NEBULA_COLORS[Math.min(i + 1, NEBULA_COLORS.length - 1)];
+  const a = colorScheme[Math.min(i, colorScheme.length - 1)];
+  const b = colorScheme[Math.min(i + 1, colorScheme.length - 1)];
   return {
     r: a.r + (b.r - a.r) * f,
     g: a.g + (b.g - a.g) * f,
@@ -146,182 +320,180 @@ export function SpaceBackground() {
   const particlesRef = useRef<FloatingParticle[]>([]);
   const animRef = useRef<number>(0);
   const sizeRef = useRef({ w: 0, h: 0 });
+  const currentSchemeRef = useRef<ColorScheme>(COLOR_SCHEMES[0]);
 
   // Generate nebula texture (lower res for performance, pixel art aesthetic)
-  const generateNebula = useCallback((w: number, h: number) => {
-    const scale = 0.15; // render at 15% resolution → pixel art look
-    const nw = Math.ceil(w * scale);
-    const nh = Math.ceil(h * scale);
+  const generateNebula = useCallback(
+    (w: number, h: number, scheme: ColorScheme) => {
+      const scale = 0.15; // render at 15% resolution → pixel art look
+      const nw = Math.ceil(w * scale);
+      const nh = Math.ceil(h * scale);
 
-    const offscreen = document.createElement("canvas");
-    offscreen.width = nw;
-    offscreen.height = nh;
-    const ctx = offscreen.getContext("2d")!;
-    const imageData = ctx.createImageData(nw, nh);
-    const data = imageData.data;
+      const offscreen = document.createElement("canvas");
+      offscreen.width = nw;
+      offscreen.height = nh;
+      const ctx = offscreen.getContext("2d")!;
+      const imageData = ctx.createImageData(nw, nh);
+      const data = imageData.data;
 
-    const seed1 = 1.0 + Math.random() * 9.0;
-    const seed2 = 1.0 + Math.random() * 9.0;
-    const noiseSize = 50;
+      const seed1 = 1.0 + Math.random() * 9.0;
+      const seed2 = 1.0 + Math.random() * 9.0;
+      const noiseSize = 50;
 
-    for (let py = 0; py < nh; py++) {
-      for (let px = 0; px < nw; px++) {
-        const ux = (px / nw) * noiseSize;
-        const uy = (py / nh) * noiseSize;
+      for (let py = 0; py < nh; py++) {
+        for (let px = 0; px < nw; px++) {
+          const ux = (px / nw) * noiseSize;
+          const uy = (py / nh) * noiseSize;
 
-        // Distance from center (for vignette)
-        const dx = px / nw - 0.5;
-        const dy = py / nh - 0.5;
-        const dist = Math.sqrt(dx * dx + dy * dy) * 0.4;
+          // Distance from center (for vignette)
+          const dx = px / nw - 0.5;
+          const dy = py / nh - 0.5;
+          const dist = Math.sqrt(dx * dx + dy * dy) * 0.4;
 
-        // Nebulae layer
-        const n = cloudAlpha(ux, uy, noiseSize, seed1);
-        const n2 = fbm(ux + 1, uy + 1, 5, seed1);
-        const nLerp = n2 * n;
-        const nDustLerp = cloudAlpha(ux, uy, noiseSize, seed1) * nLerp;
+          // Nebulae layer
+          const n = cloudAlpha(ux, uy, noiseSize, seed1);
+          const n2 = fbm(ux + 1, uy + 1, 5, seed1);
+          const nLerp = n2 * n;
+          const nDustLerp = cloudAlpha(ux, uy, noiseSize, seed1) * nLerp;
 
-        const a = n2 > 0.1 + dist ? 1 : 0;
-        const a2 = n2 > 0.115 + dist ? 1 : 0;
+          const a = n2 > 0.1 + dist ? 1 : 0;
+          const a2 = n2 > 0.115 + dist ? 1 : 0;
 
-        let colValue: number;
-        if (a2 > a) {
-          colValue = Math.floor(nDustLerp * 35) / 7;
-        } else {
-          colValue = Math.floor(nDustLerp * 14) / 7;
+          let colValue: number;
+          if (a2 > a) {
+            colValue = Math.floor(nDustLerp * 35) / 7;
+          } else {
+            colValue = Math.floor(nDustLerp * 14) / 7;
+          }
+          colValue = Math.max(0, Math.min(1, colValue));
+
+          // StarStuff (dust) layer
+          const nAlpha = fbm(
+            ux * Math.ceil(noiseSize * 0.5) + 2,
+            uy * Math.ceil(noiseSize * 0.5) + 2,
+            5,
+            seed2,
+          );
+          const nDust = cloudAlpha(ux, uy, noiseSize, seed2);
+          const nDust2 = fbm(
+            ux * Math.ceil(noiseSize * 0.2) - 2,
+            uy * Math.ceil(noiseSize * 0.2) - 2,
+            5,
+            seed2,
+          );
+          let nDustLerp2 = nDust2 * nDust;
+          const aDust = nAlpha < nDustLerp2 * 1.8 ? 1 : 0;
+          nDustLerp2 = Math.pow(nDustLerp2, 3.2) * 56;
+          const dustColValue = Math.max(
+            0,
+            Math.min(1, Math.floor(nDustLerp2) / 7),
+          );
+
+          // Blend nebula and dust
+          const nebColor = sampleColor(colValue, scheme.nebula);
+          const dustColor = sampleColor(dustColValue, scheme.nebula);
+
+          const nebAlpha = a2 * 0.7;
+          const dustAlpha2 = aDust * 0.35;
+
+          // Background base color
+          const bgR = scheme.background.r;
+          const bgG = scheme.background.g;
+          const bgB = scheme.background.b;
+
+          let r = bgR;
+          let g = bgG;
+          let b = bgB;
+
+          // Blend nebula
+          r = r * (1 - nebAlpha) + nebColor.r * nebAlpha;
+          g = g * (1 - nebAlpha) + nebColor.g * nebAlpha;
+          b = b * (1 - nebAlpha) + nebColor.b * nebAlpha;
+
+          // Blend dust
+          r = r * (1 - dustAlpha2) + dustColor.r * dustAlpha2;
+          g = g * (1 - dustAlpha2) + dustColor.g * dustAlpha2;
+          b = b * (1 - dustAlpha2) + dustColor.b * dustAlpha2;
+
+          const idx = (py * nw + px) * 4;
+          data[idx] = Math.min(255, r);
+          data[idx + 1] = Math.min(255, g);
+          data[idx + 2] = Math.min(255, b);
+          data[idx + 3] = 255;
         }
-        colValue = Math.max(0, Math.min(1, colValue));
-
-        // StarStuff (dust) layer
-        const nAlpha = fbm(
-          ux * Math.ceil(noiseSize * 0.5) + 2,
-          uy * Math.ceil(noiseSize * 0.5) + 2,
-          5,
-          seed2,
-        );
-        const nDust = cloudAlpha(ux, uy, noiseSize, seed2);
-        const nDust2 = fbm(
-          ux * Math.ceil(noiseSize * 0.2) - 2,
-          uy * Math.ceil(noiseSize * 0.2) - 2,
-          5,
-          seed2,
-        );
-        let nDustLerp2 = nDust2 * nDust;
-        const aDust = nAlpha < nDustLerp2 * 1.8 ? 1 : 0;
-        nDustLerp2 = Math.pow(nDustLerp2, 3.2) * 56;
-        const dustColValue = Math.max(
-          0,
-          Math.min(1, Math.floor(nDustLerp2) / 7),
-        );
-
-        // Blend nebula and dust
-        const nebColor = sampleColor(colValue);
-        const dustColor = sampleColor(dustColValue);
-
-        const nebAlpha = a2 * 0.7;
-        const dustAlpha2 = aDust * 0.35;
-
-        // Background base color
-        const bgR = 10;
-        const bgG = 10;
-        const bgB = 26;
-
-        let r = bgR;
-        let g = bgG;
-        let b = bgB;
-
-        // Blend nebula
-        r = r * (1 - nebAlpha) + nebColor.r * nebAlpha;
-        g = g * (1 - nebAlpha) + nebColor.g * nebAlpha;
-        b = b * (1 - nebAlpha) + nebColor.b * nebAlpha;
-
-        // Blend dust
-        r = r * (1 - dustAlpha2) + dustColor.r * dustAlpha2;
-        g = g * (1 - dustAlpha2) + dustColor.g * dustAlpha2;
-        b = b * (1 - dustAlpha2) + dustColor.b * dustAlpha2;
-
-        const idx = (py * nw + px) * 4;
-        data[idx] = Math.min(255, r);
-        data[idx + 1] = Math.min(255, g);
-        data[idx + 2] = Math.min(255, b);
-        data[idx + 3] = 255;
       }
-    }
 
-    ctx.putImageData(imageData, 0, 0);
-    nebulaRef.current = offscreen;
-  }, []);
+      ctx.putImageData(imageData, 0, 0);
+      nebulaRef.current = offscreen;
+    },
+    [],
+  );
 
   // Generate stars
-  const generateStars = useCallback((w: number, h: number) => {
-    const starCount = Math.floor((w * h) / 800);
-    const stars: Star[] = [];
+  const generateStars = useCallback(
+    (w: number, h: number, scheme: ColorScheme) => {
+      const starCount = Math.floor((w * h) / 800);
+      const stars: Star[] = [];
 
-    const starColors = [
-      { r: 200, g: 210, b: 255 }, // blue-white
-      { r: 255, g: 240, b: 220 }, // warm white
-      { r: 180, g: 190, b: 255 }, // cool blue
-      { r: 255, g: 220, b: 180 }, // warm yellow
-      { r: 212, g: 175, b: 55 }, // gold
-      { r: 200, g: 160, b: 255 }, // lavender
-    ];
+      for (let i = 0; i < starCount; i++) {
+        stars.push({
+          x: Math.random() * w,
+          y: Math.random() * h,
+          size: Math.random() * 1.8 + 0.3,
+          brightness: Math.random() * 0.6 + 0.4,
+          twinkleSpeed: Math.random() * 2 + 0.5,
+          twinklePhase: Math.random() * Math.PI * 2,
+          color: scheme.stars[Math.floor(Math.random() * scheme.stars.length)],
+        });
+      }
+      starsRef.current = stars;
 
-    for (let i = 0; i < starCount; i++) {
-      stars.push({
-        x: Math.random() * w,
-        y: Math.random() * h,
-        size: Math.random() * 1.8 + 0.3,
-        brightness: Math.random() * 0.6 + 0.4,
-        twinkleSpeed: Math.random() * 2 + 0.5,
-        twinklePhase: Math.random() * Math.PI * 2,
-        color: starColors[Math.floor(Math.random() * starColors.length)],
-      });
-    }
-    starsRef.current = stars;
-
-    // Big stars with cross/glow
-    const bigCount = Math.floor(Math.max(w, h) / 150);
-    const bigStars: BigStar[] = [];
-    for (let i = 0; i < bigCount; i++) {
-      bigStars.push({
-        x: Math.random() * w,
-        y: Math.random() * h,
-        size: Math.random() * 2 + 1.5,
-        glowSize: Math.random() * 20 + 10,
-        pulseSpeed: Math.random() * 1.5 + 0.3,
-        pulsePhase: Math.random() * Math.PI * 2,
-        color: starColors[Math.floor(Math.random() * starColors.length)],
-        rays: Math.random() > 0.5 ? 4 : 6,
-      });
-    }
-    bigStarsRef.current = bigStars;
-  }, []);
+      // Big stars with cross/glow
+      const bigCount = Math.floor(Math.max(w, h) / 150);
+      const bigStars: BigStar[] = [];
+      for (let i = 0; i < bigCount; i++) {
+        bigStars.push({
+          x: Math.random() * w,
+          y: Math.random() * h,
+          size: Math.random() * 2 + 1.5,
+          glowSize: Math.random() * 20 + 10,
+          pulseSpeed: Math.random() * 1.5 + 0.3,
+          pulsePhase: Math.random() * Math.PI * 2,
+          color: scheme.stars[Math.floor(Math.random() * scheme.stars.length)],
+          rays: Math.random() > 0.5 ? 4 : 6,
+        });
+      }
+      bigStarsRef.current = bigStars;
+    },
+    [],
+  );
 
   // Initialize floating particles
-  const initParticles = useCallback((w: number, h: number) => {
-    const count = Math.floor((w * h) / 6000);
-    const particles: FloatingParticle[] = [];
-    const pColors = [
-      { r: 212, g: 175, b: 55 },
-      { r: 180, g: 140, b: 255 },
-      { r: 100, g: 180, b: 255 },
-      { r: 255, g: 200, b: 100 },
-    ];
-    for (let i = 0; i < count; i++) {
-      const maxLife = Math.random() * 8000 + 4000;
-      particles.push({
-        x: Math.random() * w,
-        y: Math.random() * h,
-        vx: (Math.random() - 0.5) * 0.15,
-        vy: -Math.random() * 0.3 - 0.05,
-        size: Math.random() * 2 + 0.5,
-        opacity: Math.random(),
-        life: Math.random() * maxLife,
-        maxLife,
-        color: pColors[Math.floor(Math.random() * pColors.length)],
-      });
-    }
-    particlesRef.current = particles;
-  }, []);
+  const initParticles = useCallback(
+    (w: number, h: number, scheme: ColorScheme) => {
+      const count = Math.floor((w * h) / 6000);
+      const particles: FloatingParticle[] = [];
+      for (let i = 0; i < count; i++) {
+        const maxLife = Math.random() * 8000 + 4000;
+        particles.push({
+          x: Math.random() * w,
+          y: Math.random() * h,
+          vx: (Math.random() - 0.5) * 0.15,
+          vy: -Math.random() * 0.3 - 0.05,
+          size: Math.random() * 2 + 0.5,
+          opacity: Math.random(),
+          life: Math.random() * maxLife,
+          maxLife,
+          color:
+            scheme.particles[
+              Math.floor(Math.random() * scheme.particles.length)
+            ],
+        });
+      }
+      particlesRef.current = particles;
+    },
+    [],
+  );
 
   // Animation loop
   const animate = useCallback(
@@ -469,10 +641,15 @@ export function SpaceBackground() {
       // Cancel existing animation
       if (animRef.current) cancelAnimationFrame(animRef.current);
 
+      // Randomly select a color scheme
+      const randomScheme =
+        COLOR_SCHEMES[Math.floor(Math.random() * COLOR_SCHEMES.length)];
+      currentSchemeRef.current = randomScheme;
+
       // Generate everything
-      generateNebula(w, h);
-      generateStars(w, h);
-      initParticles(w, h);
+      generateNebula(w, h, randomScheme);
+      generateStars(w, h, randomScheme);
+      initParticles(w, h, randomScheme);
       animate(ctx, w, h);
     };
 
