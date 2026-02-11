@@ -146,29 +146,61 @@
 #### 查看统计数据（免费调用）
 - 点击 `getStats` → 应返回 volume=0, payouts=0, balance=0, gameCount=0
 
-### 6.2 测试游戏（需要 ETH）
+### 6.2 测试完整游戏流程（需要 ETH）
+
+#### 步骤 1：开始游戏
 1. 在 **VALUE** 输入框中输入 `10000000000000000`（0.01 ETH，单位 wei）
    - 或切换单位为 Ether，输入 `0.01`
 2. 点击 `playGame`
 3. MetaMask 确认交易
 4. 等待交易确认 → 控制台显示 `GameRequested` 事件
-5. **等待 30-60 秒**，Chainlink VRF 回调会自动触发
-6. 点击 `getStats` 检查 gameCount 是否变为 1
+5. **记录 requestId**（事件参数 args[0]）
 
-### 6.3 查询游戏结果
-1. 从 `GameRequested` 事件中获取 `requestId`
-2. 在 `getGame` 输入框填入 requestId
-3. 点击 `getGame` 查看结果：
-   - `playerWon`: 是否获胜
-   - `playerFinalHp`: 玩家最终生命值
-   - `enemyFinalHp`: 敌人最终生命值
-   - `payout`: 获胜奖金（wei）
-   - `state`: 0=等待中, 1=已结算, 2=已支付
+#### 步骤 2：等待 VRF 生成 seed（约 30-60 秒）
+1. 调用 `isSeedReady(requestId)` 检查 seed 是否就绪
+   - 返回 `false` → VRF 还在处理，继续等待
+   - 返回 `true` → seed 已生成，可以继续
+2. 或者调用 `getGame(requestId)` 查看：
+   - `seed: 0` → 还在等待 VRF
+   - `seed: 非零值` → seed 已生成！
 
-### 6.4 领取奖金（如果获胜）
-1. 在 `claimWinnings` 输入 requestId
-2. 确认交易
-3. 奖金自动转入你的钱包
+#### 步骤 3：查看战斗动画（前端）
+> 在你的前端应用中，使用 seed 重现完整的 5 回合战斗动画
+
+#### 步骤 4：结算并领取奖金
+1. 动画播放完毕后，调用 `settleBattle(requestId)`
+2. 合约会：
+   - 使用 seed 计算战斗结果
+   - 判断输赢
+   - 如果获胜，立即支付奖金到你的钱包
+3. 确认交易完成
+
+### 6.3 快速测试（不看动画）
+如果只是测试合约功能，不关心前端动画：
+
+1. `playGame()` → 记录 requestId
+2. 等待 30-60 秒
+3. `isSeedReady(requestId)` → 确认返回 `true`
+4. `settleBattle(requestId)` → 立即结算
+5. 查看钱包余额变化
+
+### 6.4 理解新架构的优势
+
+**优化前（500k Gas）**：
+- VRF 回调中计算完整战斗（5 轮循环）
+- 预估成本：86+ LINK
+- Gas 浪费严重
+
+**优化后（100k Gas）**：
+- VRF 回调只存储 seed
+- 预估成本：约 2 LINK
+- **节省 97% 成本！**
+
+**游戏流程**：
+1. `playGame()` → 请求 VRF → 支付赌注
+2. VRF 回调 → 存储 seed（超低 Gas）
+3. 前端 → 用 seed 播放战斗动画（链下）
+4. `settleBattle()` → 计算结果并支付（链上验证）
 
 ---
 
