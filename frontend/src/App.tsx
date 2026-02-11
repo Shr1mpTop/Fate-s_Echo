@@ -2,12 +2,21 @@ import { useState, useCallback, useEffect } from "react";
 import { GameSetup } from "./components/GameSetup";
 import { BattleScene } from "./components/BattleScene";
 import { GameOver } from "./components/GameOver";
+import { LoadingScreen } from "./components/LoadingScreen";
+import { SettlingScreen } from "./components/SettlingScreen";
 import { CardGallery } from "./components/CardGallery";
 import { HowToPlay } from "./components/HowToPlay";
 import { SpaceBackground } from "./components/SpaceBackground";
 import { useFateEcho } from "./web3/useFateEcho";
 
-type GamePhase = "setup" | "battle" | "gameover" | "gallery" | "howtoplay";
+type GamePhase =
+  | "setup"
+  | "loading"    // sending_tx / waiting_vrf / battle_ready
+  | "battle"     // animating
+  | "settling"   // settleBattle in progress
+  | "gameover"   // settled
+  | "gallery"
+  | "howtoplay";
 
 function App() {
   const [phase, setPhase] = useState<GamePhase>("setup");
@@ -23,9 +32,28 @@ function App() {
     resetGame,
   } = useFateEcho();
 
-  // ── Auto-transition: battle_ready → start animation → show BattleScene ──
+  // ── Auto-transition: settled → show GameOver ──
   useEffect(() => {
-    if (flowState === "battle_ready" && flowData.battleResult) {
+    if (flowState === "settled" && phase === "settling") {
+      setPhase("gameover");
+    }
+  }, [flowState, phase]);
+
+  // ── If error happens during loading/settling, stay on that screen (it shows errors) ──
+  // No auto-transition needed — LoadingScreen and SettlingScreen handle error display.
+
+  // ── Handlers ──
+  const handleStartGame = useCallback(
+    (betEth: string) => {
+      startGame(betEth);
+      setPhase("loading"); // Immediately go to loading screen
+    },
+    [startGame]
+  );
+
+  const handleEnterBattle = useCallback(() => {
+    // User clicked "Enter Battle" on LoadingScreen
+    if (flowData.battleResult) {
       startAnimation();
       setPhase("battle");
 
@@ -47,28 +75,12 @@ function App() {
       });
       console.groupEnd();
     }
-  }, [flowState, flowData.battleResult, flowData.seed, startAnimation]);
-
-  // ── Auto-transition: settled → show GameOver ──
-  useEffect(() => {
-    if (flowState === "settled") {
-      setPhase("gameover");
-    }
-  }, [flowState]);
-
-  // ── Handlers ──
-  const handleStartGame = useCallback(
-    (betEth: string) => {
-      startGame(betEth);
-      // Stay on "setup" phase — it shows the flow status indicators
-    },
-    [startGame]
-  );
+  }, [flowData.battleResult, flowData.seed, startAnimation]);
 
   const handleBattleComplete = useCallback(() => {
-    // Animation done → settle on-chain
+    // Animation done → go to settling screen, then settle on-chain
+    setPhase("settling");
     settleBattle();
-    // Will auto-transition to gameover when settled
   }, [settleBattle]);
 
   const handlePlayAgain = useCallback(() => {
@@ -87,11 +99,15 @@ function App() {
           onStartGame={handleStartGame}
           onOpenGallery={() => setPhase("gallery")}
           onOpenHowToPlay={() => setPhase("howtoplay")}
-          flowState={flowState}
           balance={balance}
+        />
+      )}
+
+      {phase === "loading" && (
+        <LoadingScreen
+          flowState={flowState}
+          onEnterBattle={handleEnterBattle}
           errorMessage={flowData.errorMessage}
-          requestId={flowData.requestId}
-          txHash={flowData.txHash ?? null}
           onReset={handlePlayAgain}
         />
       )}
@@ -101,6 +117,16 @@ function App() {
           battleResult={flowData.battleResult}
           betAmount={betAmountNum}
           onBattleComplete={handleBattleComplete}
+        />
+      )}
+
+      {phase === "settling" && flowData.battleResult && (
+        <SettlingScreen
+          flowState={flowState}
+          battleResult={flowData.battleResult}
+          betAmount={flowData.betAmount}
+          errorMessage={flowData.errorMessage}
+          onReset={handlePlayAgain}
         />
       )}
 

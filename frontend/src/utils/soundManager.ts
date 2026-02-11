@@ -15,7 +15,7 @@ type SoundEffect =
   | "sword"
   | "sword2";
 
-type BackgroundMusic = "menu" | "start-level" | "battle" | "scream";
+type BackgroundMusic = "menu" | "start-level" | "battle" | "scream" | "loading";
 
 class SoundManager {
   private sounds: Map<SoundEffect, HTMLAudioElement> = new Map();
@@ -60,12 +60,13 @@ class SoundManager {
       "start-level",
       "battle",
       "scream",
+      "loading",
     ];
 
     musicFiles.forEach((name) => {
       const audio = new Audio(`/sound/backgounrd_music/${name}.wav`);
       audio.volume = 0;
-      audio.loop = name !== "start-level" && name !== "scream"; // start-level and scream don't loop
+      audio.loop = name !== "start-level" && name !== "scream"; // start-level and scream don't loop; loading loops
       audio.preload = "auto";
       this.bgMusic.set(name, audio);
     });
@@ -183,6 +184,13 @@ class SoundManager {
    */
   playMenuMusic() {
     this.switchBackgroundMusic("menu", 1500);
+  }
+
+  /**
+   * Play loading/waiting background music
+   */
+  playLoadingMusic() {
+    this.switchBackgroundMusic("loading", 800);
   }
 
   /**

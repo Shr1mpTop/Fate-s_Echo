@@ -2,18 +2,12 @@ import React, { useState, useEffect } from "react";
 import { useAccount, useConnect, useDisconnect } from "wagmi";
 import { injected } from "wagmi/connectors";
 import { soundManager } from "../utils/soundManager";
-import type { GameFlowState } from "../web3/useFateEcho";
 
 interface GameSetupProps {
   onStartGame: (betEth: string) => void;
   onOpenGallery: () => void;
   onOpenHowToPlay: () => void;
-  flowState: GameFlowState;
   balance: string;
-  errorMessage: string | null;
-  requestId: bigint | null;
-  txHash: string | null;
-  onReset: () => void;
 }
 
 const MIN_BET = import.meta.env.VITE_MIN_BET || "0.001";
@@ -28,12 +22,7 @@ export const GameSetup: React.FC<GameSetupProps> = ({
   onStartGame,
   onOpenGallery,
   onOpenHowToPlay,
-  flowState,
   balance,
-  errorMessage,
-  requestId,
-  txHash,
-  onReset,
 }) => {
   const { isConnected, address } = useAccount();
   const { connect } = useConnect();
@@ -58,18 +47,10 @@ export const GameSetup: React.FC<GameSetupProps> = ({
     onStartGame(bet);
   };
 
-  const isBusy =
-    flowState === "sending_tx" ||
-    flowState === "waiting_vrf" ||
-    flowState === "settling";
-
-  const potentialWin = (parseFloat(betAmount) * WIN_MULTIPLIER).toFixed(4);
   const potentialProfit = (
     parseFloat(betAmount) * WIN_MULTIPLIER -
     parseFloat(betAmount)
   ).toFixed(4);
-
-  const explorerBase = import.meta.env.VITE_BLOCK_EXPLORER || "https://sepolia.etherscan.io";
 
   return (
     <div className="setup-container">
@@ -140,7 +121,6 @@ export const GameSetup: React.FC<GameSetupProps> = ({
                     key={amount}
                     className={`btn-preset ${betAmount === amount ? "active" : ""}`}
                     onClick={() => setBetAmount(amount)}
-                    disabled={isBusy}
                   >
                     {amount}
                   </button>
@@ -155,7 +135,6 @@ export const GameSetup: React.FC<GameSetupProps> = ({
                   min={MIN_BET}
                   max={MAX_BET}
                   step="0.001"
-                  disabled={isBusy}
                   placeholder={`${MIN_BET} - ${MAX_BET} ETH`}
                 />
                 <span className="input-suffix">ETH</span>
@@ -175,83 +154,6 @@ export const GameSetup: React.FC<GameSetupProps> = ({
                 </div>
               </div>
             </div>
-
-            {/* ── Game Flow Status ─────────────────────────── */}
-            {flowState !== "idle" && (
-              <div className="setup-field flow-status">
-                <label className="setup-label">
-                  <span className="label-icon">📡</span>
-                  TX Status
-                </label>
-                <div className="flow-steps">
-                  <FlowStep
-                    label="Send Bet TX"
-                    state={
-                      flowState === "sending_tx"
-                        ? "active"
-                        : "done"
-                    }
-                  />
-                  <FlowStep
-                    label="Waiting for VRF"
-                    state={
-                      flowState === "waiting_vrf"
-                        ? "active"
-                        : flowState === "sending_tx"
-                          ? "pending"
-                          : "done"
-                    }
-                  />
-                  <FlowStep
-                    label="Battle Animation"
-                    state={
-                      flowState === "battle_ready" || flowState === "animating"
-                        ? "active"
-                        : flowState === "sending_tx" || flowState === "waiting_vrf"
-                          ? "pending"
-                          : "done"
-                    }
-                  />
-                  <FlowStep
-                    label="Settle On-Chain"
-                    state={
-                      flowState === "settling"
-                        ? "active"
-                        : flowState === "settled"
-                          ? "done"
-                          : "pending"
-                    }
-                  />
-                </div>
-
-                {txHash && (
-                  <a
-                    className="tx-link"
-                    href={`${explorerBase}/tx/${txHash}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    View TX on Etherscan ↗
-                  </a>
-                )}
-
-                {requestId && (
-                  <div className="request-id">
-                    Request ID: {requestId.toString().slice(0, 20)}...
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* ── Error Display ─────────────────────────── */}
-            {flowState === "error" && errorMessage && (
-              <div className="setup-field error-field">
-                <div className="error-message">❌ {errorMessage}</div>
-                <button className="btn-secondary" onClick={onReset}>
-                  🔄 Reset
-                </button>
-              </div>
-            )}
 
             {/* Sound Toggle */}
             <div className="setup-field sound-toggle-field">
@@ -281,17 +183,9 @@ export const GameSetup: React.FC<GameSetupProps> = ({
             <button
               className="btn-primary start-btn"
               onClick={handleStart}
-              disabled={isBusy || parseFloat(betAmount) < parseFloat(MIN_BET)}
+              disabled={parseFloat(betAmount) < parseFloat(MIN_BET)}
             >
-              {isBusy ? (
-                <>
-                  {flowState === "sending_tx" && "⏳ Sending TX..."}
-                  {flowState === "waiting_vrf" && "🔮 Waiting for VRF..."}
-                  {flowState === "settling" && "⏳ Settling..."}
-                </>
-              ) : (
-                <>⚔ Place Bet — {betAmount} ETH</>
-              )}
+              ⚔ Place Bet — {betAmount} ETH
             </button>
           </>
         )}
@@ -308,28 +202,10 @@ export const GameSetup: React.FC<GameSetupProps> = ({
         <div className="setup-footer">
           <p>5 rounds of fate. 78 tarot cards. One destiny.</p>
           <p className="footer-small">
-            Chainlink VRF powered — every result is verifiable on-chain
+            Provably fair — every result is verifiable on-chain
           </p>
         </div>
       </div>
     </div>
   );
 };
-
-// ── Flow Step Indicator ──
-function FlowStep({
-  label,
-  state,
-}: {
-  label: string;
-  state: "pending" | "active" | "done";
-}) {
-  return (
-    <div className={`flow-step ${state}`}>
-      <span className="flow-step-icon">
-        {state === "done" ? "✅" : state === "active" ? "⏳" : "⬜"}
-      </span>
-      <span className="flow-step-label">{label}</span>
-    </div>
-  );
-}
