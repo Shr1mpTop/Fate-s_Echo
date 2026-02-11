@@ -189,9 +189,7 @@ export const GameSetup: React.FC<GameSetupProps> = ({
                     state={
                       flowState === "sending_tx"
                         ? "active"
-                        : flowState === "idle"
-                          ? "pending"
-                          : "done"
+                        : "done"
                     }
                   />
                   <FlowStep
@@ -199,7 +197,7 @@ export const GameSetup: React.FC<GameSetupProps> = ({
                     state={
                       flowState === "waiting_vrf"
                         ? "active"
-                        : ["idle", "sending_tx"].includes(flowState)
+                        : flowState === "sending_tx"
                           ? "pending"
                           : "done"
                     }
@@ -209,11 +207,7 @@ export const GameSetup: React.FC<GameSetupProps> = ({
                     state={
                       flowState === "battle_ready" || flowState === "animating"
                         ? "active"
-                        : [
-                              "idle",
-                              "sending_tx",
-                              "waiting_vrf",
-                            ].includes(flowState)
+                        : flowState === "sending_tx" || flowState === "waiting_vrf"
                           ? "pending"
                           : "done"
                     }

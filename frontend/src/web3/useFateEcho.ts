@@ -18,6 +18,7 @@ import {
   useBalance,
 } from "wagmi";
 import { parseEther, formatEther } from "viem";
+import { sepolia } from "wagmi/chains";
 import { FATE_ECHO_ABI, FATE_ECHO_ADDRESS } from "./contract";
 import { resolveBattle, type BattleResult } from "../engine/battleEngine";
 
@@ -62,6 +63,11 @@ export function useFateEcho() {
   // ── Wallet balance ──
   const { data: balanceData, refetch: refetchBalance } = useBalance({
     address,
+    chainId: sepolia.id,
+    query: {
+      enabled: !!address,
+      refetchInterval: 15_000, // auto-refresh every 15s
+    },
   });
 
   // ── Write: playGame ──
